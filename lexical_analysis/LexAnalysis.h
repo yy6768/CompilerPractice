@@ -236,8 +236,9 @@ void LexAnalyzer::Execute() {
     pre_null_ = false;
   }
 
-  for (const auto& token : tokens_) {
-    cout << "<" << token.GetValue() << "," << token.GetId() << ">" << endl;
+  for (int i = 1; i <= tokens_.size(); i++) {
+    cout << i << ": <" << tokens_[i - 1].GetValue() << ","
+         << tokens_[i - 1].GetId() << ">" << endl;
   }
 }
 
@@ -285,7 +286,7 @@ void LexAnalyzer::GetOperator(string& word) {
   char c = input_.get();
   word.push_back(c);
   switch (c) {
-    case '-': {
+    case '-': {  // "-", "-=", "--"
       char prec = c;
       c = input_.peek();
       if (prec == c || c == '=' || c == '>') {
@@ -296,7 +297,7 @@ void LexAnalyzer::GetOperator(string& word) {
     }
     case '+':
     case '&':
-    case '|': {
+    case '|': {  // +, &和 | 都可以变成 cc 或者 c=的状态
       char prec = c;
       c = input_.peek();
       if (c == prec || c == '=') {
@@ -308,7 +309,7 @@ void LexAnalyzer::GetOperator(string& word) {
     case '*':
     case '^':
     case '!':
-    case '=': {
+    case '=': {  // * ^ ! = 可以接受 c 和 c=的状态
       char prec = c;
       c = input_.peek();
       if (c == '=') {
@@ -318,10 +319,10 @@ void LexAnalyzer::GetOperator(string& word) {
       break;
     }
     case '?':
-    case '~':
+    case '~':  // 只能获得本身，不接受其他输入
       break;
     case '<':
-    case '>': {
+    case '>': {  // 对于<和> ,可以接受 c,c=,cc,cc=的状态
       char prec = c;
       c = input_.peek();
       if (c == prec) {
@@ -335,7 +336,7 @@ void LexAnalyzer::GetOperator(string& word) {
       }
       break;
     }
-    case '/': {
+    case '/': {  // 对于/,可以接受// c^* \n， /* c^* */ 以及 /= 和 /
       c = input_.peek();
       if (c == '/') {
         while ((c = input_.get()) && c != '\n') {
@@ -344,7 +345,7 @@ void LexAnalyzer::GetOperator(string& word) {
         tokens_.emplace_back(Token(word, Token::TK_COMMENT, 79));
         return;
       }
-      if (c == '*') {
+      if (c == '*') {  // 多行注释
         input_.get();
         word.push_back(c);
         c = input_.get();
@@ -353,6 +354,7 @@ void LexAnalyzer::GetOperator(string& word) {
           c = input_.get();
           word.push_back(c);
         }
+        input_.get();
         word.push_back('/');
         tokens_.emplace_back(Token(word, Token::TK_COMMENT, 79));
         return;
