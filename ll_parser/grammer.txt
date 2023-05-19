@@ -1,0 +1,14 @@
+program -> compoundstmt
+stmt ->  ifstmt  |  whilestmt  |  assgstmt  |  compoundstmt
+compoundstmt ->  { stmts }
+stmts ->  stmt stmts   |   E
+ifstmt ->  if ( boolexpr ) then stmt else stmt
+whilestmt ->  while ( boolexpr ) stmt
+assgstmt ->  ID = arithexpr ;
+boolexpr  ->  arithexpr boolop arithexpr
+boolop ->   <  |  >  |  <=  |  >=  | ==
+arithexpr  ->  multexpr arithexprprime
+arithexprprime ->  + multexpr arithexprprime  |  - multexpr arithexprprime  |   E
+multexpr ->  simpleexpr  multexprprime
+multexprprime ->  * simpleexpr multexprprime  |  / simpleexpr multexprprime  |   E
+simpleexpr ->  ID  |  NUM  |  ( arithexpr )
