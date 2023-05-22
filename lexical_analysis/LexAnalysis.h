@@ -83,7 +83,7 @@ class Token {
   auto GetValue() const -> const string& { return value_; }
   auto GetId() const -> int { return id_; }
 
- private:
+ protected:
   // 字符串内容
   string value_;
   // 标号
@@ -97,27 +97,30 @@ class ErrorToken : public Token {
     INVALID_CONSTANT,
     INVALID_IDENTIFIER,
     INVALID_OPERATOR,
+    UNCLOSED_COMMENT,
     UNKNOWN
   };
-  ErrorToken(string value, ErrorType error, int line_number)
+  ErrorToken(string value, ErrorType error_type, int line_number)
       : Token(value, Type::TK_ERROR, -1),
-        error_(error),
+        error_type_(error_type),
         line_number_(line_number) {}
 
-  auto GetErrorMsg() -> string {
+  auto GetErrorMsg() const -> string {
     ostringstream os;
     os << line_number_;
-    if (error_ == ErrorType::INVALID_IDENTIFIER) {
-      return "There is an invalid identifier at " + os.str();
-    } else if (error_ == ErrorType::INVALID_OPERATOR) {
-      return "There is an invalid operator at row" + os.str();
+    if (error_type_ == ErrorType::INVALID_IDENTIFIER) {
+      return "There is an invalid identifier " + value_ + " at row " + os.str();
+    } else if (error_type_ == ErrorType::INVALID_OPERATOR) {
+      return "There is an invalid operator " + value_ + " at row " + os.str();
+    } else if (error_type_ == ErrorType::UNCLOSED_COMMENT) {
+      return "There is an unclosed commit ar row " + os.str();
     } else {
       return "Unknown type error at " + os.str();
     }
   }
 
  private:
-  ErrorType error_;
+  ErrorType error_type_;
   int line_number_;
 };
 
@@ -148,6 +151,11 @@ class LexAnalyzer {
    * @brief 连续读取操作符
    */
   void GetOperator(string& word);
+
+  /**
+   * @brief 输出错误数据
+   */
+  void OutputErrorMsg();
 
  private:
   /* 判断是否是空字符 */
@@ -285,6 +293,7 @@ void LexAnalyzer::GetAlpha(string& word) {
 void LexAnalyzer::GetOperator(string& word) {
   char c = input_.get();
   word.push_back(c);
+  bool is_identifier = false;
   switch (c) {
     case '-': {  // "-", "-=", "--"
       char prec = c;
@@ -350,8 +359,16 @@ void LexAnalyzer::GetOperator(string& word) {
         word.push_back(c);
         c = input_.get();
         word.push_back(c);
+        int old_line_number = line_number_;
         while (c != '*' || input_.peek() != '/') {
           c = input_.get();
+          if (c == '\n') {
+            ++line_number_;
+          } else if (c == EOF) {
+            errors_.emplace_back(ErrorToken(
+                "", ErrorToken::ErrorType::UNCLOSED_COMMENT, old_line_number));
+            return;
+          }
           word.push_back(c);
         }
         input_.get();
@@ -371,6 +388,7 @@ void LexAnalyzer::GetOperator(string& word) {
       if (IsAlpha(c)) {
         word.push_back(c);
         input_.get();
+        is_identifier = true;
         tokens_.push_back(Token(word, Token::TK_IDENTIFIER, 81));
       }
       if (c == '=') {
@@ -382,9 +400,18 @@ void LexAnalyzer::GetOperator(string& word) {
   }
   if (c_keys.find(word) != c_keys.end()) {
     tokens_.emplace_back(Token(word, Token::TK_OPERATOR, c_keys[word]));
-  } else {
+  } else if (!is_identifier) {
     errors_.emplace_back(ErrorToken(
         word, ErrorToken::ErrorType::INVALID_OPERATOR, line_number_));
+  }
+}
+
+void LexAnalyzer::OutputErrorMsg() {
+  if (!errors_.empty()) {
+    cout << "The lex analyzer found " << errors_.size() << " errors:" << endl;
+  }
+  for (const auto& error_token : errors_) {
+    cout << error_token.GetErrorMsg() << endl;
   }
 }
 
@@ -395,7 +422,9 @@ void Analysis() {
   read_prog(prog);
   /********* Begin *********/
   auto lex_analyzer = LexAnalyzer(prog);
+  // 词法分析主过程
   lex_analyzer.Execute();
-
+  // 输出错误信息
+  lex_analyzer.OutputErrorMsg();
   /********* End *********/
 }
