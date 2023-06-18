@@ -1,0 +1,10 @@
+文法
+Sprime -> S
+S -> L = R
+S -> R
+L -> * R
+L -> ID
+R -> L
+
+output:
+语法错误，第-1行，文法错误

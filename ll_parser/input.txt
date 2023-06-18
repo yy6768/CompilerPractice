@@ -1,11 +1,6 @@
-{ 
-if ( ID == NUM ) 
-then
- ID = ID + NUM ;
-else
-if ( ID <= NUM )
-then
- ID = ID / NUM ;
-else 
- ID = ID - NUM ;
+{
+	if ( ID == NUM ) 
+	then ID = NUM ;
+	ID = NUM ;
 }
+

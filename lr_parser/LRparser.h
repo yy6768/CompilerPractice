@@ -35,24 +35,25 @@ unordered_set<string> terminates{
     ")", "ID", "=",  ">",  "<",   ">=",   "<=",   "==",    "+",
     "-", "*",  "/",  "ID", "NUM", "E",    ";",    "$"};
 
-string grammer(
-    "program -> compoundstmt \n"
-    "stmt-> ifstmt | whilestmt | assgstmt | compoundstmt\n"
-    "compoundstmt->{ stmts }\n"
-    "stmts->stmt stmts | E\n"
-    "ifstmt->if ( boolexpr ) then stmt else stmt\n"
-    "whilestmt->while ( boolexpr ) stmt\n"
-    "assgstmt-> ID = arithexpr ;\n"
-    "boolexpr-> arithexpr boolop arithexpr\n"
-    "boolop -> < | > | <= | >= | ==\n"
-    "arithexpr-> multexpr arithexprprime\n"
-    "arithexprprime-> + multexpr arithexprprime | - multexpr arithexprprime | "
-    "E\n"
-    "multexpr->simpleexpr multexprprime\n"
-    "multexprprime->* simpleexpr multexprprime | / simpleexpr multexprprime | "
-    "E\n"
-    "simpleexpr->ID | NUM | ( arithexpr )");
+// string grammer(
+//     "program -> compoundstmt \n"
+//     "stmt-> ifstmt | whilestmt | assgstmt | compoundstmt\n"
+//     "compoundstmt->{ stmts }\n"
+//     "stmts->stmt stmts | E\n"
+//     "ifstmt->if ( boolexpr ) then stmt else stmt\n"
+//     "whilestmt->while ( boolexpr ) stmt\n"
+//     "assgstmt-> ID = arithexpr ;\n"
+//     "boolexpr-> arithexpr boolop arithexpr\n"
+//     "boolop -> < | > | <= | >= | ==\n"
+//     "arithexpr-> multexpr arithexprprime\n"
+//     "arithexprprime-> + multexpr arithexprprime | - multexpr arithexprprime |
+//     " "E\n" "multexpr->simpleexpr multexprprime\n" "multexprprime->*
+//     simpleexpr multexprprime | / simpleexpr multexprprime | " "E\n"
+//     "simpleexpr->ID | NUM | ( arithexpr )");
 
+string grammer(
+    "Sprime -> S\n"
+    "S -> L = R\n S -> R\n L -> * R\n L -> ID\n R -> L");
 /**
  * 辅助函数：去除字符串前后空格
  */
@@ -112,13 +113,13 @@ struct Item {
   string formula_;
   // 点的位置
   unordered_set<string> symbol_;  // 展望串
-  Item() = default;
-  Item(const Item& item)
+  explicit Item() = default;
+  explicit Item(const Item& item)
       : non_term_(item.non_term_),
         formula_(item.formula_),
         dot_idx_(item.dot_idx_),
         symbol_(item.symbol_) {}
-  Item(NonTerminal non_term, string formula, int dot_idx)
+  explicit Item(NonTerminal non_term, string formula, int dot_idx)
       : non_term_(non_term), formula_(formula), dot_idx_(dot_idx) {}
 
   bool operator==(const Item& rhs) const {
@@ -146,10 +147,10 @@ class hash<Item> {  // Item 的hash函数
 struct CanonicalCollection {
   int idx_;  // 编号
   unordered_set<Item> items_;
-  CanonicalCollection() = default;
-  CanonicalCollection(const CanonicalCollection& rhs)
+  explicit CanonicalCollection() = default;
+  explicit CanonicalCollection(const CanonicalCollection& rhs)
       : idx_(rhs.idx_), items_(rhs.items_) {}
-  CanonicalCollection(int idx, unordered_set<Item>& items)
+  explicit CanonicalCollection(int idx, unordered_set<Item>& items)
       : idx_(idx), items_(items) {}
 
   bool operator==(const CanonicalCollection& rhs) const {
@@ -182,8 +183,8 @@ struct TableItem {
 
   int sid_{0};
   ActionState state_;
-  TableItem() = default;
-  TableItem(int sid, ActionState state) : sid_(sid), state_(state) {}
+  explicit TableItem() = default;
+  explicit TableItem(int sid, ActionState state) : sid_(sid), state_(state) {}
 
   inline void Output() const {
     switch (state_) {
@@ -215,7 +216,7 @@ struct Reflect {
   int first_;
   string symbol_;
   int next_;
-  Reflect() = default;
+  explicit Reflect() = default;
 };
 
 struct Token {
@@ -224,6 +225,22 @@ struct Token {
   explicit Token() = default;
   explicit Token(const Token& token) = default;
   explicit Token(string value, int ln) : value_(value), ln_(ln) {}
+};
+
+/**
+ * 定义Parser的接口
+ */
+class Parser {
+  // 生成First集合
+  virtual void GenerateFist() = 0;
+  // 生成Follow集合
+  virtual void GenerateFollow() = 0;
+  // 主要转化过程
+  virtual void Parse() = 0;
+  // 输出错误
+  virtual void ErrorOutput() = 0;
+  // 输出解析结果
+  virtual void Output() = 0;
 };
 
 class LRParser;
@@ -248,7 +265,7 @@ class LRParseTable {
 /**
  * LRParser
  */
-class LRParser {
+class LRParser : public Parser {
   // 终结符，非终结符和产生式
   using Terminal = string;
   using NonTerminal = string;

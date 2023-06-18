@@ -1,0 +1,68 @@
+{
+	if ( ID == NUM ) 
+	then ID = NUM ;
+	ID = NUM ;
+}
+
+
+output:
+语法错误，第3行，缺少"else"
+program
+        compoundstmt
+                {
+                stmts
+                        stmt
+                                ifstmt
+                                        if
+                                        (
+                                        boolexpr
+                                                arithexpr
+                                                        multexpr
+                                                                simpleexpr
+                                                                        ID
+                                                                multexprprime
+                                                                        E
+                                                        arithexprprime
+                                                                E
+                                                boolop
+                                                        ==
+                                                arithexpr
+                                                        multexpr
+                                                                simpleexpr
+                                                                        NUM
+                                                                multexprprime
+                                                                        E
+                                                        arithexprprime
+                                                                E
+                                        )
+                                        then
+                                        stmt
+                                                assgstmt
+                                                        ID
+                                                        =
+                                                        arithexpr
+                                                                multexpr
+                                                                        simpleexpr
+                                                                                NUM
+                                                                        multexprprime
+                                                                                E
+                                                                arithexprprime
+                                                                        E
+                                                        ;
+                                        else
+                                        stmt
+                                                assgstmt
+                                                        ID
+                                                        =
+                                                        arithexpr
+                                                                multexpr
+                                                                        simpleexpr
+                                                                                NUM
+                                                                        multexprprime
+                                                                                E
+                                                                arithexprprime
+                                                                        E
+                                                        ;
+                        stmts
+                                E
+                }

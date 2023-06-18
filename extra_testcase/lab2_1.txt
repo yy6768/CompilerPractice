@@ -1,0 +1,28 @@
+{
+ID = NUM ;
+while (
+
+output:
+语法错误，第3行，代码不完整
+program
+        compoundstmt
+                {
+                stmts
+                        stmt
+                                assgstmt
+                                        ID
+                                        =
+                                        arithexpr
+                                                multexpr
+                                                        simpleexpr
+                                                                NUM
+                                                        multexprprime
+                                                                E
+                                                arithexprprime
+                                                        E
+                                        ;
+                        stmts
+                                stmt
+                                        whilestmt
+                                                while
+                                                (

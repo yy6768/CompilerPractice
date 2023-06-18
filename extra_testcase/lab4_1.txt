@@ -1,0 +1,7 @@
+int b = 1 ;
+{
+b = d ;
+}
+
+output:
+error message:line 3,cannot get the value of undeclared id

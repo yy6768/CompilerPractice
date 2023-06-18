@@ -173,10 +173,10 @@ struct Item {
   vector<string> formula_;
   // 点的位置
   unordered_set<string> symbol_;  // 展望串
-  Item() = default;
-  Item(const Item& item) = default;
-  Item(const NonTerminal& non_term, const vector<string>& formula, int dot_idx,
-       int prod_id)
+  explicit Item() = default;
+  explicit Item(const Item& item) = default;
+  explicit Item(const NonTerminal& non_term, const vector<string>& formula,
+                int dot_idx, int prod_id)
       : non_term_(non_term),
         formula_(formula),
         dot_idx_(dot_idx),
@@ -245,8 +245,8 @@ struct TableItem {
 
   int sid_{0};
   ActionState state_;
-  TableItem() = default;
-  TableItem(int sid, ActionState state) : sid_(sid), state_(state) {}
+  explicit TableItem() = default;
+  explicit TableItem(int sid, ActionState state) : sid_(sid), state_(state) {}
 
   inline void Output() const {
     switch (state_) {
@@ -278,7 +278,7 @@ struct Reflect {
   int first_;
   string symbol_;
   int next_;
-  Reflect() = default;
+  explicit Reflect() = default;
 };
 
 // 词法单元
@@ -289,12 +289,10 @@ struct Token {
   string name_;
   TokenType type_;
 
-  Token() = default;
-  Token(const Token& token) = default;
-  Token(const string& str, double value, TokenType type, int ln)
+  explicit Token(const string& str, double value, TokenType type, int ln)
       : str_(str), value_(value), type_(type), ln_(ln) {}
 
-  Token(const string& str, string name, TokenType type, int ln)
+  explicit Token(const string& str, const string& name, TokenType type, int ln)
       : str_(str), name_(name), type_(type), ln_(ln) {}
 };
 
@@ -325,6 +323,22 @@ struct Expression {
       : tokens_(tokens), item_(item) {}
 };
 
+/**
+ * 定义Parser的接口
+ */
+class Parser {
+  // 生成First集合
+  virtual void GenerateFist() = 0;
+  // 生成Follow集合
+  virtual void GenerateFollow() = 0;
+  // 主要转化过程
+  virtual void Parse() = 0;
+  // 输出错误
+  virtual void ErrorOutput() = 0;
+  // 输出解析结果
+  virtual void Output() = 0;
+};
+
 class LRParser;
 /**
  * LR(1) 预测表
@@ -334,8 +348,7 @@ class LRParseTable {
   friend class LRParser;  // 解析器友元
 
  public:
-  LRParseTable() = default;
-  LRParseTable(LRParser* parser) : parser_(parser) {}
+  explicit LRParseTable(LRParser* parser) : parser_(parser) {}
   void Init();   // 初始化
   void Build();  // 构建表
 
@@ -347,7 +360,7 @@ class LRParseTable {
 /**
  * LRParser
  */
-class LRParser {
+class LRParser : public Parser {
   // 终结符，非终结符和产生式
   using Terminal = string;
   using NonTerminal = string;
@@ -379,6 +392,8 @@ class LRParser {
   void Parse();
   // 输出错误
   inline void ErrorOutput() { handler_.Output(); }
+  // 输出
+  void Output();
 
   // Translation Schema
   void Translate();
@@ -398,7 +413,7 @@ class LRParser {
   void Closure(unordered_set<Item>& items);
 
   // 将单词转换成Token(TS)
-  Token StrToToken(const string& str, int ln);
+  auto StrToToken(const string& str, int ln) -> Token;
 
   // 变量
   string input_;
@@ -444,6 +459,7 @@ class LRParser {
   unordered_map<int, ProductionType> synax_rules_;
   unordered_map<string, TokenType> id_type_;
   unordered_map<string, double> id_value_;
+  vector<string> token_ids_;
 };
 
 void LRParser::GenerateGrammer(const string& raw_grammer) {
@@ -502,16 +518,6 @@ void LRParser::GenerateGrammer(const string& raw_grammer) {
   }
   // 非终结符
   terminals_ = terminates;
-
-  // for (const auto& g : grammer_) {
-  //   for (const auto& p : g.second) {
-  //     cout << p.id_ << " " << p.left_ << "->";
-  //     for (const auto& r : p.rights_) {
-  //       cout << r << " ";
-  //     }
-  //     cout << endl;
-  //   }
-  // }
 }
 
 void LRParser::CalculateFirst(const NonTerminal& left) {
@@ -817,7 +823,7 @@ void LRParseTable::Build() {
 /**
  * 将输入str转换成token函数
  */
-Token LRParser::StrToToken(const string& str, int ln) {
+auto LRParser::StrToToken(const string& str, int ln) -> Token {
   if (terminals_.find(str) != terminals_.end()) {  // 终结符
     return Token(str, 0.0, TokenType::Terminal, ln);
   }
@@ -846,9 +852,10 @@ Token LRParser::StrToToken(const string& str, int ln) {
     }
     TokenType type = (eval_res.size() == 1) ? TokenType::INT : TokenType::REAL;
     if (type == TokenType::REAL) {
-      return Token("REALNUM", eval_res[0] + eval_res[1], TokenType::REAL, ln);
+      return Token(string("REALNUM"), eval_res[0] + eval_res[1],
+                   TokenType::REAL, ln);
     } else {
-      return Token("INTNUM", eval_res[0], TokenType::INT, ln);
+      return Token(string("INTNUM"), eval_res[0], TokenType::INT, ln);
     }
   }
   return Token("ID", str, TokenType::ID, ln);
@@ -940,7 +947,6 @@ void LRParser::Parse() {
 }
 
 void LRParser::Translate() {
-  vector<string> token_ids;
   double eval_value = 0, op_value = 0;
   bool holding = false;
   int bool_res = 0;
@@ -955,9 +961,9 @@ void LRParser::Translate() {
         } else {
           type = TokenType::REAL;
         }
-        token_ids.emplace_back(tokens[tokens.size() - 2].name_);
-        id_type_.emplace(token_ids.back(), type);
-        id_value_.emplace(token_ids.back(), tokens[tokens.size() - 4].value_);
+        token_ids_.emplace_back(tokens[tokens.size() - 2].name_);
+        id_type_.emplace(token_ids_.back(), type);
+        id_value_.emplace(token_ids_.back(), tokens[tokens.size() - 4].value_);
         break;
       }
       case ProductionType::INSTANT: {  // 如果是立即数取值
@@ -1050,8 +1056,11 @@ void LRParser::Translate() {
         break;
     }
   }
+}
+
+void LRParser::Output() {
   if (handler_.Empty()) {
-    for (auto id : token_ids) {
+    for (auto id : token_ids_) {
       cout << id << ": " << id_value_[id] << endl;
     }
   } else {
@@ -1068,5 +1077,6 @@ void Analysis() {
 
   lr_parser.Parse();
   lr_parser.Translate();
+  lr_parser.Output();
   /********* End *********/
 }

@@ -1,0 +1,5 @@
+{
+a = 1 ;
+}
+output
+cannot assign value to undeclared id

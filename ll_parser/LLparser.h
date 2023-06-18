@@ -97,7 +97,26 @@ void ErrorHandler::Concat(int line_number, ErrorType error_type,
 
 void ErrorHandler::Output() { cout << error_msg_.str(); }
 
-class LLParser {
+/**
+ * 定义Parser的接口
+ */
+class Parser {
+  // 生成First集合
+  virtual void GenerateFist() = 0;
+  // 生成Follow集合
+  virtual void GenerateFollow() = 0;
+  // 主要转化过程
+  virtual void Parse() = 0;
+  // 输出错误
+  virtual void ErrorOutput() = 0;
+  // 输出解析结果
+  virtual void Output() = 0;
+};
+
+/**
+ * LLParser 支持LL(1)语法分析
+ */
+class LLParser : public Parser {
   // 终结符，非终结符和产生式
   using Terminal = string;
   using NonTerminal = string;
@@ -337,29 +356,6 @@ void LLParser::GenerateFollow() {
       }
     }
   }
-  // for (const auto& [left, follows] : follow_) {
-  //   cout << left << ":" << endl;
-  //   for (const auto& follow : follows) {
-  //     cout << follow << endl;
-  //   }
-  //   cout << endl;
-  // }
-  // for (const auto& [left, childrens] : depends) {
-  //   cout << left << ":" << endl;
-  //   for (const auto& child : childrens) {
-  //     cout << child << endl;
-  //   }
-  //   cout << endl;
-  // }
-
-  // for (const auto& [non, cols] : ll_table_) {
-  //   cout << non << ":" << endl;
-  //   for (const auto& [term, pro] : cols) {
-  //     cout << term << " "
-  //          << " " << pro.first << "->" << pro.second << endl;
-  //   }
-  //   cout << endl;
-  // }
 }
 
 void LLParser::Parse() {

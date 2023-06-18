@@ -100,7 +100,7 @@ class ErrorToken : public Token {
     UNCLOSED_COMMENT,
     UNKNOWN
   };
-  ErrorToken(string value, ErrorType error_type, int line_number)
+  explicit ErrorToken(string value, ErrorType error_type, int line_number)
       : Token(value, Type::TK_ERROR, -1),
         error_type_(error_type),
         line_number_(line_number) {}
