@@ -98,6 +98,7 @@ class ErrorToken : public Token {
     INVALID_IDENTIFIER,
     INVALID_OPERATOR,
     UNCLOSED_COMMENT,
+    UNKNOWN_INPUT,
     UNKNOWN
   };
   explicit ErrorToken(string value, ErrorType error_type, int line_number)
@@ -114,6 +115,8 @@ class ErrorToken : public Token {
       return "There is an invalid operator " + value_ + " at row " + os.str();
     } else if (error_type_ == ErrorType::UNCLOSED_COMMENT) {
       return "There is an unclosed commit ar row " + os.str();
+    } else if (error_type_ == ErrorType::UNKNOWN_INPUT) {
+      return "There is an unknown input symbol" + os.str();
     } else {
       return "Unknown type error at " + os.str();
     }
@@ -220,8 +223,9 @@ void LexAnalyzer::Execute() {
           Token(current, Token::TK_DELIMITER, c_keys[current]));
       c = input_.get();
     } else {
-      errors_.emplace_back(
-          ErrorToken(current, ErrorToken::ErrorType::UNKNOWN, line_number_));
+      c = input_.get();
+      errors_.emplace_back(ErrorToken(
+          current, ErrorToken::ErrorType::UNKNOWN_INPUT, line_number_));
     }
 
     if (!pre_null_) {
@@ -396,6 +400,12 @@ void LexAnalyzer::GetOperator(string& word) {
         input_.get();
       }
       break;
+    }
+    default: {
+      input_.get();
+      errors_.emplace_back(ErrorToken(
+          word, ErrorToken::ErrorType::INVALID_OPERATOR, line_number_));
+      return;
     }
   }
   if (c_keys.find(word) != c_keys.end()) {
